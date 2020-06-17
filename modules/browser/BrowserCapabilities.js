@@ -154,7 +154,7 @@ export default class BrowserCapabilities extends BrowserDetection {
      * @returns {boolean}
      */
     supportsRtpSender() {
-        return this.isFirefox() || this.isSafari();
+        return this.isFirefox();
     }
 
     /**
@@ -195,13 +195,13 @@ export default class BrowserCapabilities extends BrowserDetection {
             return true;
         }
 
-        if (this.isSafari() && typeof window.RTCRtpTransceiver !== 'undefined') {
+        /*if (this.isSafari() && typeof window.RTCRtpTransceiver !== 'undefined') {
             // eslint-disable-next-line max-len
             // https://trac.webkit.org/changeset/236144/webkit/trunk/LayoutTests/webrtc/video-addLegacyTransceiver.html
             // eslint-disable-next-line no-undef
             return Object.keys(RTCRtpTransceiver.prototype)
                    .indexOf('currentDirection') > -1;
-        }
+        }*/
 
         return false;
     }
@@ -216,7 +216,9 @@ export default class BrowserCapabilities extends BrowserDetection {
      */
     usesNewGumFlow() {
         const REQUIRED_CHROME_VERSION = 61;
-
+        if(this.isSafari()) {
+            return false;
+        }
         if (this.isChrome()) {
             return !this.isVersionLessThan(REQUIRED_CHROME_VERSION);
         }
