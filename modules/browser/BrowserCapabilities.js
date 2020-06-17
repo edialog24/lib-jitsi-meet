@@ -1,6 +1,6 @@
 import { getLogger } from 'jitsi-meet-logger';
 import { BrowserDetection } from 'js-utils';
-
+import { CHROME } from 'js-utils/browser-detection/browsers';
 const logger = getLogger(__filename);
 
 // TODO: Move this code to js-utils.
@@ -21,7 +21,16 @@ export default class BrowserCapabilities extends BrowserDetection {
         logger.info(
             `This appears to be ${this.getName()}, ver: ${this.getVersion()}`);
     }
+    /**
+     * Creates new BrowserCapabilities instance.
+     */
+    isChrome() {
+        if (this._name === CHROME || this.isSafari()) {
+            return true;
+        }
 
+        return false;
+    }
     /**
      * Tells whether or not the <tt>MediaStream/tt> is removed from
      * the <tt>PeerConnection</tt> and disposed on video mute (in order to turn

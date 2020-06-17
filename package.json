@@ -57,6 +57,8 @@
   "scripts": {
     "lint": "eslint . && flow",
     "postinstall": "webpack -p",
+      "build": "webpack",
+      "builddev": "webpack",
     "test": "karma start karma.conf.js",
     "test-watch": "karma start karma.conf.js --no-single-run",
     "validate": "npm ls"

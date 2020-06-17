@@ -679,6 +679,9 @@ TraceablePeerConnection.prototype._remoteStreamAdded = function(stream) {
  * for the remote participant in unified plan.
  */
 TraceablePeerConnection.prototype._remoteTrackAdded = function(stream, track, transceiver = null) {
+    if (undefined === this.remoteDescription.sdp) {
+        return setTimeout(() => this._remoteTrackAdded(stream, track, transceiver), 50);
+    }
     const streamId = RTC.getStreamID(stream);
     const mediaType = track.kind;
 
@@ -714,9 +717,13 @@ TraceablePeerConnection.prototype._remoteTrackAdded = function(stream, track, tr
             mediaLines = remoteSDP.media.filter(mls => SDPUtil.findLine(mls, `a=mid:${mid}`));
         } else {
             mediaLines = remoteSDP.media.filter(mls => {
-                const msid = SDPUtil.findLine(mls, 'a=msid');
+                try {
+                    const msid = SDPUtil.findLine(mls, 'a=msid');
 
-                return typeof msid !== 'undefined' && streamId === msid.substring(7).split(' ')[0];
+                    return typeof msid !== 'undefined' && streamId === msid.substring(7).split(' ')[0];
+                } catch(e) {
+                    return false;
+                }
             });
         }
     } else {
