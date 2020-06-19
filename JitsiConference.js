@@ -1087,62 +1087,69 @@ JitsiConference.prototype._doReplaceTrack = function(oldTrack, newTrack) {
  * @param {JitsiLocalTrack} newTrack the new track being created
  */
 JitsiConference.prototype._setupNewTrack = function(newTrack) {
-    if (newTrack.isAudioTrack() || (newTrack.isVideoTrack()
+    try {
+        if (newTrack.isAudioTrack() || (newTrack.isVideoTrack()
             && newTrack.videoType !== VideoType.DESKTOP)) {
-        // Report active device to statistics
-        const devices = RTC.getCurrentlyAvailableMediaDevices();
-        const device
-            = devices.find(
-                d =>
-                    d.kind === `${newTrack.getTrack().kind}input`
-                        && d.label === newTrack.getTrack().label);
+            // Report active device to statistics
+            const devices = RTC.getCurrentlyAvailableMediaDevices();
+            const device
+                = devices.find(
+                d => {
+                    if(newTrack.getTrack()) {
+                        return d.kind === `${newTrack.getTrack().kind}input`
+                        && d.label === newTrack.getTrack().label;
+                    }
+                });
 
-        if (device) {
-            Statistics.sendActiveDeviceListEvent(
-                RTC.getEventDataForActiveDevice(device));
-        }
-    }
-    if (newTrack.isVideoTrack()) {
-        this.removeCommand('videoType');
-        this.sendCommand('videoType', {
-            value: newTrack.videoType,
-            attributes: {
-                xmlns: 'http://jitsi.org/jitmeet/video'
+            if (device) {
+                Statistics.sendActiveDeviceListEvent(
+                    RTC.getEventDataForActiveDevice(device));
             }
-        });
-    }
-    this.rtc.addLocalTrack(newTrack);
-
-    // ensure that we're sharing proper "is muted" state
-    if (newTrack.isAudioTrack()) {
-        this.room.setAudioMute(newTrack.isMuted());
-    } else {
-        this.room.setVideoMute(newTrack.isMuted());
-    }
-
-    // Setup E2EE on the new track that has been added
-    // to the conference, apply it on all the open peerconnections.
-    if (this._e2eeCtx) {
-        if (this.p2pJingleSession) {
-            this._setupSenderE2EEForTrack(this.p2pJingleSession, newTrack);
         }
-        if (this.jvbJingleSession) {
-            this._setupSenderE2EEForTrack(this.jvbJingleSession, newTrack);
+        if (newTrack.isVideoTrack()) {
+            this.removeCommand('videoType');
+            this.sendCommand('videoType', {
+                value: newTrack.videoType,
+                attributes: {
+                    xmlns: 'http://jitsi.org/jitmeet/video'
+                }
+            });
         }
+        this.rtc.addLocalTrack(newTrack);
+
+        // ensure that we're sharing proper "is muted" state
+        if (newTrack.isAudioTrack()) {
+            this.room.setAudioMute(newTrack.isMuted());
+        } else {
+            this.room.setVideoMute(newTrack.isMuted());
+        }
+
+        // Setup E2EE on the new track that has been added
+        // to the conference, apply it on all the open peerconnections.
+        if (this._e2eeCtx) {
+            if (this.p2pJingleSession) {
+                this._setupSenderE2EEForTrack(this.p2pJingleSession, newTrack);
+            }
+            if (this.jvbJingleSession) {
+                this._setupSenderE2EEForTrack(this.jvbJingleSession, newTrack);
+            }
+        }
+
+        newTrack.muteHandler = this._fireMuteChangeEvent.bind(this, newTrack);
+        newTrack.audioLevelHandler = this._fireAudioLevelChangeEvent.bind(this);
+        newTrack.addEventListener(
+            JitsiTrackEvents.TRACK_MUTE_CHANGED,
+            newTrack.muteHandler);
+        newTrack.addEventListener(
+            JitsiTrackEvents.TRACK_AUDIO_LEVEL_CHANGED,
+            newTrack.audioLevelHandler);
+
+        newTrack._setConference(this);
+
+        this.eventEmitter.emit(JitsiConferenceEvents.TRACK_ADDED, newTrack);
+    }catch(e) {
+        console.error(e);
     }
-
-    newTrack.muteHandler = this._fireMuteChangeEvent.bind(this, newTrack);
-    newTrack.audioLevelHandler = this._fireAudioLevelChangeEvent.bind(this);
-    newTrack.addEventListener(
-        JitsiTrackEvents.TRACK_MUTE_CHANGED,
-        newTrack.muteHandler);
-    newTrack.addEventListener(
-        JitsiTrackEvents.TRACK_AUDIO_LEVEL_CHANGED,
-        newTrack.audioLevelHandler);
-
-    newTrack._setConference(this);
-
-    this.eventEmitter.emit(JitsiConferenceEvents.TRACK_ADDED, newTrack);
 };
 
 /**

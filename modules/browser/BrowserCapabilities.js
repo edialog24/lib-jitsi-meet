@@ -78,8 +78,7 @@ export default class BrowserCapabilities extends BrowserDetection {
     isSupported() {
         return this.isChromiumBased()
             || this.isFirefox()
-            || this.isReactNative()
-            || (this.isSafari() && !this.isVersionLessThan('12.1'));
+            || this.isReactNative();
     }
 
     /**
@@ -110,7 +109,7 @@ export default class BrowserCapabilities extends BrowserDetection {
     supportsBandwidthStatistics() {
         // FIXME bandwidth stats are currently not implemented for FF on our
         // side, but not sure if not possible ?
-        return !this.isFirefox() && !this.isSafari();
+        return !this.isFirefox();
     }
 
     /**
@@ -289,6 +288,9 @@ export default class BrowserCapabilities extends BrowserDetection {
      * @returns {Number}
      */
     _getChromiumBasedVersion() {
+        if(this.isSafari()) {
+            return 68;
+        }
         if (this.isChromiumBased()) {
             // NW.JS doesn't expose the Chrome version in the UA string.
             if (this.isNWJS()) {
